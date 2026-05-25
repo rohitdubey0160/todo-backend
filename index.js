@@ -99,8 +99,11 @@ app.post("/signup", async (req, resp) => {
 app.post("/add-task", verifyJwtToken, async (req, resp) => {
   const db = await connection();
   const collection = await db.collection(collectionName);
-
-  const result = await collection.insertOne(req.body);
+const taskData = {
+    ...req.body,
+    email: req.user.email
+  };
+  const result = await collection.insertOne(taskData);
   if (result) {
     resp.send({
       message: "new task added",
@@ -119,8 +122,9 @@ app.get("/tasks", verifyJwtToken, async (req, resp) => {
   const db = await connection();
 
   const collection = db.collection(collectionName);
-  const result = await collection.find().toArray();
-
+  const result = await collection.find({
+  email:req.user.email
+}).toArray();
   if (result) {
     resp.send({
       message: "Data fetched",
@@ -241,9 +245,10 @@ function verifyJwtToken(req, resp, next) {
       });
     }
 
+    req.user = decoded;
     console.log("Decoded data", decoded);
 
-    next();
+   return  next();
   });
 }
 
