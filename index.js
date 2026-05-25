@@ -221,7 +221,7 @@ app.delete("/delete-multiple", verifyJwtToken, async (req, resp) => {
 
 function verifyJwtToken(req, resp, next) {
   // console.log("cookies Test",req.cookies['token']);
-  const token = req.cookies["token"];
+  const token = req.headers.authorization
   if (!token) {
     return resp.send({
       message: "No token provided",
