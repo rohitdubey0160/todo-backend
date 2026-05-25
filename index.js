@@ -220,7 +220,10 @@ app.delete("/delete-multiple", verifyJwtToken, async (req, resp) => {
 });
 
 function verifyJwtToken(req, resp, next) {
-  const token = req.headers.authorization;
+
+  const token = req.cookies.token;
+
+  console.log("COOKIE TOKEN:", token);
 
   if (!token) {
     return resp.send({
