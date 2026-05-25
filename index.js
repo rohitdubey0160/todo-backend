@@ -220,22 +220,26 @@ app.delete("/delete-multiple", verifyJwtToken, async (req, resp) => {
 });
 
 function verifyJwtToken(req, resp, next) {
-  // console.log("cookies Test",req.cookies['token']);
-  const token = req.headers.authorization
+  const token = req.headers.authorization;
+
   if (!token) {
     return resp.send({
       message: "No token provided",
       success: false,
     });
   }
+
   jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+
     if (error) {
-      resp.send({
+      return resp.send({
         message: "Invalid token",
         success: false,
       });
     }
+
     console.log("Decoded data", decoded);
+
     next();
   });
 }
