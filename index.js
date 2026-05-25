@@ -4,13 +4,15 @@ import { collectionName, connection } from "./dbConfig.js";
 import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
 
+dotenv.config();
 const app = express();
 
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://todo-frontend-sable-zeta.vercel.app",
     credentials: true,
   }),
 );
@@ -28,13 +30,23 @@ app.post("/login", async (req, resp) => {
     });
 
     if (result) {
-      jwt.sign(userData, "Google", { expiresIn: "5d" }, (error, token) => {
-        resp.send({
-          message: "Login successful",
-          success: true,
-          token,
-        });
-      });
+      jwt.sign(
+        userData,
+        process.env.JWT_SECRET,
+        { expiresIn: "5d" },
+        (error, token) => {
+          resp.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+          });
+          resp.send({
+            message: "Login successful",
+            success: true,
+            token,
+          });
+        },
+      );
     } else {
       resp.send({
         message: "Invalid credentials",
@@ -58,13 +70,23 @@ app.post("/signup", async (req, resp) => {
     const result = await collection.insertOne(userData);
 
     if (result) {
-      jwt.sign(userData, "Google", { expiresIn: "5d" }, (error, token) => {
-        resp.send({
-          message: "Signup successful",
-          success: true,
-          token,
-        });
-      });
+      jwt.sign(
+        userData,
+        process.env.JWT_SECRET,
+        { expiresIn: "5d" },
+        (error, token) => {
+          resp.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+          });
+          resp.send({
+            message: "Signup successful",
+            success: true,
+            token,
+          });
+        },
+      );
     }
   } else {
     resp.send({
@@ -74,7 +96,7 @@ app.post("/signup", async (req, resp) => {
   }
 });
 
-app.post("/add-task",verifyJwtToken, async (req, resp) => {
+app.post("/add-task", verifyJwtToken, async (req, resp) => {
   const db = await connection();
   const collection = await db.collection(collectionName);
 
@@ -113,9 +135,7 @@ app.get("/tasks", verifyJwtToken, async (req, resp) => {
   }
 });
 
-
-
-app.get("/task/:id",verifyJwtToken, async (req, resp) => {
+app.get("/task/:id", verifyJwtToken, async (req, resp) => {
   const db = await connection();
   const collection = db.collection(collectionName);
   const result = await collection.findOne({ _id: new ObjectId(req.params.id) });
@@ -134,7 +154,7 @@ app.get("/task/:id",verifyJwtToken, async (req, resp) => {
   }
 });
 
-app.put("/update-task", verifyJwtToken,async (req, resp) => {
+app.put("/update-task", verifyJwtToken, async (req, resp) => {
   const db = await connection();
   const collection = await db.collection(collectionName);
 
@@ -159,7 +179,7 @@ app.put("/update-task", verifyJwtToken,async (req, resp) => {
   }
 });
 
-app.delete("/delete/:id",verifyJwtToken, async (req, resp) => {
+app.delete("/delete/:id", verifyJwtToken, async (req, resp) => {
   const db = await connection();
   const collection = await db.collection(collectionName);
   const id = req.params.id;
@@ -177,7 +197,7 @@ app.delete("/delete/:id",verifyJwtToken, async (req, resp) => {
   }
 });
 
-app.delete("/delete-multiple", verifyJwtToken,async (req, resp) => {
+app.delete("/delete-multiple", verifyJwtToken, async (req, resp) => {
   const db = await connection();
   const collection = await db.collection(collectionName);
   const ids = req.body;
@@ -202,7 +222,13 @@ app.delete("/delete-multiple", verifyJwtToken,async (req, resp) => {
 function verifyJwtToken(req, resp, next) {
   // console.log("cookies Test",req.cookies['token']);
   const token = req.cookies["token"];
-  jwt.verify(token, "Google", (error, decoded) => {
+  if (!token) {
+    return resp.send({
+      message: "No token provided",
+      success: false,
+    });
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
     if (error) {
       resp.send({
         message: "Invalid token",
@@ -214,4 +240,9 @@ function verifyJwtToken(req, resp, next) {
   });
 }
 
-app.listen(3200);
+const PORT = process.env.PORT || 3200;
+
+app.listen(PORT,()=>{
+  console.log("Server running on port", PORT);
+  
+});
